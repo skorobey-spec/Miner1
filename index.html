@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сапёр</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Сапёр</h1>
+        
+        <div class="controls">
+            <label for="difficulty">Сложность:</label>
+            <select id="difficulty">
+                <option value="easy">Легко (9x9, 10 мин)</option>
+                <option value="medium" selected>Средне (16x16, 40 мин)</option>
+                <option value="hard">Сложно (30x16, 99 мин)</option>
+				<option value="crazy">Безумно (66x34, 500 мин)</option>
+				<option value="mysterious">Мистический (106x60, 1000 мин)</option>
+            </select>
+            <button id="new-game">Новая игра</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <span class="stat-label">Мины:</span>
+                <span id="mines-count" class="stat-value">0</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Время:</span>
+                <span id="timer" class="stat-value">00:00</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Статус:</span>
+                <span id="game-status" class="stat-value">Игра</span>
+            </div>
+        </div>
+
+        <div id="game-board" class="game-board"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
