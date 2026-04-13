@@ -15,24 +15,35 @@ class Minesweeper {
         this.leftMouseDown = false;
         this.rightMouseDown = false;
         this.chordHandled = new Set();
+        this.protectedMines = new Set();
+        this.lives = 0;
+        this.maxLives = 0;
 
         this.difficulties = {
-            easy: { rows: 9, cols: 9, mines: 10 },
-            medium: { rows: 16, cols: 16, mines: 40 },
-            hard: { rows: 16, cols: 30, mines: 99 },
-            crazy: { rows: 66, cols: 34, mines: 500 },
-            mysterious: { rows: 106, cols: 60, mines: 1000 }
+            easy: { rows: 9, cols: 9, mines: 10, lives: 1 },
+            medium: { rows: 16, cols: 16, mines: 40, lives: 2 },
+            hard: { rows: 16, cols: 30, mines: 99, lives: 3 },
+            crazy: { rows: 66, cols: 34, mines: 500, lives: 3 },
+            mysterious: { rows: 106, cols: 60, mines: 1000, lives: 3 }
         };
 
         this.initElements();
         this.bindEvents();
-        this.newGame();
+        this.bindSaveEvents();
+
+        const saved = this.loadGame();
+        if (saved) {
+            this.restoreGame(saved);
+        } else {
+            this.newGame();
+        }
     }
 
     initElements() {
         this.gameBoard = document.getElementById('game-board');
         this.minesCountElement = document.getElementById('mines-count');
         this.timerElement = document.getElementById('timer');
+        this.livesElement = document.getElementById('lives');
         this.gameStatusElement = document.getElementById('game-status');
         this.difficultySelect = document.getElementById('difficulty');
         this.newGameButton = document.getElementById('new-game');
@@ -43,11 +54,111 @@ class Minesweeper {
         this.difficultySelect.addEventListener('change', () => this.newGame());
     }
 
+    bindSaveEvents() {
+        window.addEventListener('beforeunload', () => this.saveGame());
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                this.saveGame();
+            }
+        });
+    }
+
+    saveGame() {
+        if (this.gameOver || this.gameWon || this.firstClick) {
+            localStorage.removeItem('minesweeper_save');
+            return;
+        }
+
+        const data = {
+            board: this.board,
+            rows: this.rows,
+            cols: this.cols,
+            minesCount: this.minesCount,
+            flagsCount: this.flagsCount,
+            revealedCount: this.revealedCount,
+            lives: this.lives,
+            maxLives: this.maxLives,
+            timer: this.timer,
+            difficulty: this.difficultySelect.value,
+            protectedMines: [...this.protectedMines],
+            chordHandled: [...this.chordHandled],
+            leftMouseDown: this.leftMouseDown,
+            rightMouseDown: this.rightMouseDown
+        };
+
+        localStorage.setItem('minesweeper_save', JSON.stringify(data));
+    }
+
+    loadGame() {
+        const raw = localStorage.getItem('minesweeper_save');
+        if (!raw) return null;
+        try {
+            return JSON.parse(raw);
+        } catch {
+            localStorage.removeItem('minesweeper_save');
+            return null;
+        }
+    }
+
+    restoreGame(data) {
+        this.board = data.board;
+        this.rows = data.rows;
+        this.cols = data.cols;
+        this.minesCount = data.minesCount;
+        this.flagsCount = data.flagsCount;
+        this.revealedCount = data.revealedCount;
+        this.lives = data.lives;
+        this.maxLives = data.maxLives;
+        this.timer = data.timer;
+        this.firstClick = false;
+        this.gameOver = false;
+        this.gameWon = false;
+        this.protectedMines = new Set(data.protectedMines);
+        this.chordHandled = new Set(data.chordHandled);
+        this.leftMouseDown = false;
+        this.rightMouseDown = false;
+
+        this.difficultySelect.value = data.difficulty;
+        this.updateTimerDisplay();
+        this.updateMinesDisplay();
+        this.renderLives();
+        this.updateStatus('Игра (сохранена)', '');
+
+        this.renderBoard();
+        this.renderBoardState();
+        this.startTimer();
+    }
+
+    renderBoardState() {
+        for (let i = 0; i < this.rows; i++) {
+            for (let j = 0; j < this.cols; j++) {
+                const cell = this.board[i][j];
+                const cellElement = this.getCellElement(i, j);
+
+                if (cell.isRevealed) {
+                    cellElement.classList.add('revealed');
+                    if (cell.isMine) {
+                        cellElement.classList.add('mine');
+                        cellElement.textContent = '💣';
+                    } else if (cell.neighborMines > 0) {
+                        cellElement.textContent = cell.neighborMines;
+                        cellElement.classList.add(`number-${cell.neighborMines}`);
+                    }
+                } else if (cell.isFlagged) {
+                    cellElement.classList.add('flagged');
+                    cellElement.textContent = '🚩';
+                }
+            }
+        }
+    }
+
     newGame() {
         const difficulty = this.difficulties[this.difficultySelect.value];
         this.rows = difficulty.rows;
         this.cols = difficulty.cols;
         this.minesCount = difficulty.mines;
+        this.maxLives = difficulty.lives;
+        this.lives = difficulty.lives;
         this.flagsCount = 0;
         this.revealedCount = 0;
         this.gameOver = false;
@@ -55,16 +166,20 @@ class Minesweeper {
         this.leftMouseDown = false;
         this.rightMouseDown = false;
         this.chordHandled = new Set();
+        this.protectedMines = new Set();
         this.firstClick = true;
         this.timer = 0;
 
         this.stopTimer();
         this.updateTimerDisplay();
         this.updateMinesDisplay();
+        this.renderLives();
         this.updateStatus('Игра', '');
 
         this.createBoard();
         this.renderBoard();
+
+        localStorage.removeItem('minesweeper_save');
     }
 
     createBoard() {
@@ -139,7 +254,8 @@ class Minesweeper {
         this.gameBoard.style.gridTemplateColumns = `repeat(${this.cols}, 30px)`;
         this.gameBoard.style.gridTemplateRows = `repeat(${this.rows}, 30px)`;
 
-        this.gameBoard.addEventListener('contextmenu', (e) => e.preventDefault());
+        // Remove old listener by replacing the element's method
+        this.gameBoard.oncontextmenu = (e) => e.preventDefault();
 
         for (let i = 0; i < this.rows; i++) {
             for (let j = 0; j < this.cols; j++) {
@@ -192,7 +308,10 @@ class Minesweeper {
             n => this.board[n.row][n.col].isFlagged
         ).length;
 
-        if (flaggedNeighbors !== cell.neighborMines) return;
+        if (flaggedNeighbors !== cell.neighborMines) {
+            this.highlightUnrevealedNeighbors(neighbors);
+            return;
+        }
 
         this.chordHandled.add(key);
 
@@ -203,15 +322,33 @@ class Minesweeper {
                 this.revealCell(n.row, n.col);
                 if (neighbor.isMine) {
                     hitMine = true;
+                    const mineKey = `${n.row},${n.col}`;
+                    if (!this.protectedMines.has(mineKey) && this.lives > 0) {
+                        this.protectedMines.add(mineKey);
+                        this.loseLife(n.row, n.col);
+                    }
                 }
             }
         }
 
-        if (hitMine) {
-            this.endGame(false);
-        } else {
+        if (hitMine && this.lives <= 0) {
+            setTimeout(() => this.endGame(false), 1200);
+        } else if (!hitMine) {
             this.checkWin();
         }
+    }
+
+    highlightUnrevealedNeighbors(neighbors) {
+        neighbors.forEach(n => {
+            const cell = this.board[n.row][n.col];
+            if (!cell.isRevealed && !cell.isFlagged) {
+                const cellElement = this.getCellElement(n.row, n.col);
+                cellElement.classList.add('highlight');
+                setTimeout(() => {
+                    cellElement.classList.remove('highlight');
+                }, 100);
+            }
+        });
     }
 
     handleCellClick(row, col) {
@@ -225,11 +362,18 @@ class Minesweeper {
             this.startTimer();
         }
 
-        this.revealCell(row, col);
+        //this.revealCell(row, col);
 
         if (this.board[row][col].isMine) {
-            this.endGame(false);
+            const key = `${row},${col}`;
+            if (!this.protectedMines.has(key) && this.lives > 0) {
+                this.protectedMines.add(key);
+                this.loseLife(row, col);
+            } else if (!this.protectedMines.has(key)) {
+                this.endGame(false);
+            }
         } else {
+            this.revealCell(row, col);
             this.checkWin();
         }
     }
@@ -254,6 +398,7 @@ class Minesweeper {
         }
 
         this.updateMinesDisplay();
+        this.saveGame();
     }
 
     revealCell(row, col) {
@@ -268,7 +413,7 @@ class Minesweeper {
         const cellElement = this.getCellElement(row, col);
         cellElement.classList.add('revealed');
 
-        if (cell.isMine) {
+        if (cell.isMine && this.lives <= 0) {
             cellElement.classList.add('mine');
             cellElement.textContent = '💣';
             return;
@@ -282,6 +427,60 @@ class Minesweeper {
             neighbors.forEach(neighbor => {
                 this.revealCell(neighbor.row, neighbor.col);
             });
+        }
+
+        this.saveGame();
+    }
+
+    loseLife(row, col) {
+        this.lives--;
+        this.renderLives(true);
+
+        const cell = this.board[row][col];
+        const cellElement = this.getCellElement(row, col);
+        this.showGuardianAngel(cellElement);
+
+        if (this.lives <= 0) {
+            cellElement.classList.add('mine-exploded');
+            setTimeout(() => this.endGame(false), 1000);
+        }else{
+            cell.isFlagged = true;
+            this.flagsCount++;
+            cellElement.classList.add('flagged');
+            cellElement.textContent = '🚩';
+            this.showGuardianAngel(cellElement);
+            this.updateMinesDisplay();
+        }
+    }
+
+    showGuardianAngel(cellElement) {
+        const angel = document.createElement('div');
+        angel.className = 'guardian-angel';
+        angel.textContent = '👼';
+        cellElement.appendChild(angel);
+
+        setTimeout(() => {
+            if (angel.parentNode) {
+                angel.parentNode.removeChild(angel);
+            }
+        }, 1200);
+    }
+
+    renderLives(burning = false) {
+        this.livesElement.innerHTML = '';
+        for (let i = 0; i < this.maxLives; i++) {
+            const angel = document.createElement('span');
+            angel.className = 'angel-life';
+            angel.textContent = '👼';
+
+            if (i >= this.lives && burning) {
+                angel.classList.add('burning');
+            } else if (i >= this.lives) {
+                angel.style.opacity = '0';
+                angel.style.transform = 'scale(0)';
+            }
+
+            this.livesElement.appendChild(angel);
         }
     }
 
@@ -297,6 +496,7 @@ class Minesweeper {
     endGame(isWin) {
         this.gameOver = true;
         this.stopTimer();
+        localStorage.removeItem('minesweeper_save');
 
         if (isWin) {
             this.gameWon = true;
