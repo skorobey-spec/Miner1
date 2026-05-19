@@ -15,7 +15,7 @@ class Minesweeper {
         this.leftMouseDown = false;
         this.rightMouseDown = false;
         this.chordHandled = new Set();
-        this.protectedMines = new Set();
+        //this.protectedMines = new Set();
         this.lives = 0;
         this.maxLives = 0;
 
@@ -80,7 +80,7 @@ class Minesweeper {
             maxLives: this.maxLives,
             timer: this.timer,
             difficulty: this.difficultySelect.value,
-            protectedMines: [...this.protectedMines],
+            //protectedMines: [...this.protectedMines],
             chordHandled: [...this.chordHandled],
             leftMouseDown: this.leftMouseDown,
             rightMouseDown: this.rightMouseDown
@@ -113,7 +113,7 @@ class Minesweeper {
         this.firstClick = false;
         this.gameOver = false;
         this.gameWon = false;
-        this.protectedMines = new Set(data.protectedMines);
+        //this.protectedMines = new Set(data.protectedMines);
         this.chordHandled = new Set(data.chordHandled);
         this.leftMouseDown = false;
         this.rightMouseDown = false;
@@ -166,7 +166,7 @@ class Minesweeper {
         this.leftMouseDown = false;
         this.rightMouseDown = false;
         this.chordHandled = new Set();
-        this.protectedMines = new Set();
+        //this.protectedMines = new Set();
         this.firstClick = true;
         this.timer = 0;
 
@@ -315,27 +315,30 @@ class Minesweeper {
 
         this.chordHandled.add(key);
 
+        // Первый проход: только проверка на мины
         let hitMine = false;
         for (const n of neighbors) {
             const neighbor = this.board[n.row][n.col];
-            if (!neighbor.isRevealed && !neighbor.isFlagged) {
-                this.revealCell(n.row, n.col);
-                if (neighbor.isMine) {
-                    hitMine = true;
-                    const mineKey = `${n.row},${n.col}`;
-                    if (!this.protectedMines.has(mineKey) && this.lives > 0) {
-                        this.protectedMines.add(mineKey);
-                        this.loseLife(n.row, n.col);
-                    }
+            if (!neighbor.isRevealed && !neighbor.isFlagged && neighbor.isMine) {
+                hitMine = true;
+                if (this.lives > 0) {
+                    this.loseLife(n.row, n.col);
                 }
             }
         }
 
-        if (hitMine && this.lives <= 0) {
-            setTimeout(() => this.endGame(false), 1200);
-        } else if (!hitMine) {
-            this.checkWin();
+        // Если есть мина — предположение игрока ошибочно, ничего не открываем
+        if (hitMine) return;
+
+        // Второй проход: открываем все безопасные ячейки
+        for (const n of neighbors) {
+            const neighbor = this.board[n.row][n.col];
+            if (!neighbor.isRevealed && !neighbor.isFlagged) {
+                this.revealCell(n.row, n.col);
+            }
         }
+
+        this.checkWin();
     }
 
     highlightUnrevealedNeighbors(neighbors) {
@@ -365,11 +368,11 @@ class Minesweeper {
         //this.revealCell(row, col);
 
         if (this.board[row][col].isMine) {
-            const key = `${row},${col}`;
-            if (!this.protectedMines.has(key) && this.lives > 0) {
-                this.protectedMines.add(key);
+            //const key = `${row},${col}`;
+            if (this.lives > 0) {
+                //this.protectedMines.add(key);
                 this.loseLife(row, col);
-            } else if (!this.protectedMines.has(key)) {
+            } else {
                 this.endGame(false);
             }
         } else {
