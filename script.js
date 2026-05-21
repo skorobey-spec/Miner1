@@ -52,6 +52,12 @@ class Minesweeper {
     bindEvents() {
         this.newGameButton.addEventListener('click', () => this.newGame());
         this.difficultySelect.addEventListener('change', () => this.newGame());
+
+        // prevent stuck mouse flags from missed mouseup events
+        document.addEventListener('mouseup', (e) => {
+            if (e.button === 0) this.leftMouseDown = false;
+            if (e.button === 2) this.rightMouseDown = false;
+        }, { capture: true });
     }
 
     bindSaveEvents() {
