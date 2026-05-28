@@ -451,16 +451,17 @@ class Minesweeper {
 
         const cell = this.board[row][col];
         const cellElement = this.getCellElement(row, col);
-        this.showGuardianAngel(cellElement);
 
         if (this.lives <= 0) {
             cellElement.classList.add('mine-exploded');
+            this.showGuardianAngel(cellElement);
             this.triggerExplosionChain(row, col);
         } else {
             cell.isFlagged = true;
             this.flagsCount++;
             cellElement.classList.add('flagged');
             cellElement.textContent = '🚩';
+            this.showGuardianAngel(cellElement);
             this.updateMinesDisplay();
         }
     }
