@@ -358,7 +358,7 @@ h1 {
     }
     100% {
         transform: translate(var(--tx, 0px), var(--ty, 0px)) rotate(var(--rot, 0deg));
-        opacity: 0;
+        opacity: 1;
     }
 }
 

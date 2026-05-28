@@ -505,11 +505,11 @@ class Minesweeper {
                 const dirX = dx === 0 ? 0 : dx / Math.abs(dx);
                 const dirY = dy === 0 ? 0 : dy / Math.abs(dy);
 
-                const travelX = (dirX || (Math.random() > 0.5 ? 1 : -1)) * (80 + Math.random() * 80) * dist;
-                const travelY = (dirY || (Math.random() > 0.5 ? 1 : -1)) * (80 + Math.random() * 80) * dist;
-                const rot = (Math.random() - 0.5) * 1440;
-                const duration = 600 + Math.random() * 400;
-                const delay = dist * 40;
+                const travelX = (dirX || (Math.random() > 0.5 ? 1 : -1)) * (30 + Math.random() * 25) * dist;
+                const travelY = (dirY || (Math.random() > 0.5 ? 1 : -1)) * (30 + Math.random() * 25) * dist;
+                const rot = (Math.random() - 0.5) * 1080;
+                const duration = 800 + Math.random() * 600;
+                const delay = dist * 60;
 
                 cellEl.style.setProperty('--tx', `${travelX}px`);
                 cellEl.style.setProperty('--ty', `${travelY}px`);
