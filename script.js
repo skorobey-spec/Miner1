@@ -454,13 +454,12 @@ class Minesweeper {
 
         if (this.lives <= 0) {
             cellElement.classList.add('mine-exploded');
-            setTimeout(() => this.endGame(false), 1000);
-        }else{
+            this.triggerExplosionChain(row, col);
+        } else {
             cell.isFlagged = true;
             this.flagsCount++;
             cellElement.classList.add('flagged');
             cellElement.textContent = '🚩';
-            this.showGuardianAngel(cellElement);
             this.updateMinesDisplay();
         }
     }
@@ -518,6 +517,55 @@ class Minesweeper {
                 cellEl.classList.add('cell-flying');
             }
         }
+    }
+
+    explodeAllMines() {
+        for (let i = 0; i < this.rows; i++) {
+            for (let j = 0; j < this.cols; j++) {
+                const cell = this.board[i][j];
+                if (!cell.isMine || cell.isFlagged) continue;
+                const cellEl = this.getCellElement(i, j);
+                if (!cellEl) continue;
+                cellEl.classList.add('mine-final-explode');
+                cellEl.textContent = '💣';
+            }
+        }
+    }
+
+    revealAllMinesFirstPass() {
+        for (let i = 0; i < this.rows; i++) {
+            for (let j = 0; j < this.cols; j++) {
+                const cell = this.board[i][j];
+                const cellEl = this.getCellElement(i, j);
+                if (cell.isMine && !cell.isFlagged) {
+                    cell.isRevealed = true;
+                    cellEl.classList.add('revealed');
+                    cellEl.classList.add('mine-exploded');
+                }
+                if (!cell.isMine && cell.isFlagged) {
+                    cellEl.textContent = '❌';
+                }
+            }
+        }
+    }
+
+    triggerExplosionChain(row, col) {
+        this.explosionInProgress = true;
+
+        this.revealAllMinesFirstPass();
+        this.showFireFlash(row, col);
+
+        setTimeout(() => {
+            this.flyAwayCells(row, col);
+        }, 200);
+
+        setTimeout(() => {
+            this.explodeAllMines();
+        }, 600);
+
+        setTimeout(() => {
+            this.endGame(false);
+        }, 1200);
     }
 
     renderLives(burning = false) {
