@@ -8,6 +8,7 @@ class Minesweeper {
         this.revealedCount = 0;
         this.gameOver = false;
         this.gameWon = false;
+        this.explosionInProgress = false;
         this.firstClick = true;
         this.timer = 0;
         this.timerInterval = null;
@@ -119,6 +120,7 @@ class Minesweeper {
         this.firstClick = false;
         this.gameOver = false;
         this.gameWon = false;
+        this.explosionInProgress = false;
         //this.protectedMines = new Set(data.protectedMines);
         this.chordHandled = new Set(data.chordHandled);
         this.leftMouseDown = false;
@@ -169,6 +171,7 @@ class Minesweeper {
         this.revealedCount = 0;
         this.gameOver = false;
         this.gameWon = false;
+        this.explosionInProgress = false;
         this.leftMouseDown = false;
         this.rightMouseDown = false;
         this.chordHandled = new Set();
@@ -361,7 +364,7 @@ class Minesweeper {
     }
 
     handleCellClick(row, col) {
-        if (this.gameOver || this.gameWon) return;
+        if (this.gameOver || this.gameWon || this.explosionInProgress) return;
         if (this.board[row][col].isFlagged) return;
         if (this.board[row][col].isRevealed) return;
 
@@ -388,7 +391,7 @@ class Minesweeper {
     }
 
     handleRightClick(row, col) {
-        if (this.gameOver || this.gameWon) return;
+        if (this.gameOver || this.gameWon || this.explosionInProgress) return;
         if (this.board[row][col].isRevealed) return;
 
         const cell = this.board[row][col];
