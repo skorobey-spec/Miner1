@@ -478,6 +478,48 @@ class Minesweeper {
         }, 1200);
     }
 
+    showFireFlash(row, col) {
+        const cellElement = this.getCellElement(row, col);
+        const flash = document.createElement('div');
+        flash.className = 'fire-flash';
+        cellElement.appendChild(flash);
+        setTimeout(() => {
+            if (flash.parentNode) flash.parentNode.removeChild(flash);
+        }, 600);
+    }
+
+    flyAwayCells(centerRow, centerCol) {
+        const maxDist = 2;
+        for (let i = 0; i < this.rows; i++) {
+            for (let j = 0; j < this.cols; j++) {
+                const dx = j - centerCol;
+                const dy = i - centerRow;
+                const dist = Math.max(Math.abs(dx), Math.abs(dy));
+                if (dist < 1 || dist > maxDist) continue;
+                if (this.board[i][j].isRevealed) continue;
+
+                const cellEl = this.getCellElement(i, j);
+                if (!cellEl) continue;
+
+                const dirX = dx === 0 ? 0 : dx / Math.abs(dx);
+                const dirY = dy === 0 ? 0 : dy / Math.abs(dy);
+
+                const travelX = (dirX || (Math.random() > 0.5 ? 1 : -1)) * (80 + Math.random() * 80) * dist;
+                const travelY = (dirY || (Math.random() > 0.5 ? 1 : -1)) * (80 + Math.random() * 80) * dist;
+                const rot = (Math.random() - 0.5) * 1440;
+                const duration = 600 + Math.random() * 400;
+                const delay = dist * 40;
+
+                cellEl.style.setProperty('--tx', `${travelX}px`);
+                cellEl.style.setProperty('--ty', `${travelY}px`);
+                cellEl.style.setProperty('--rot', `${rot}deg`);
+                cellEl.style.setProperty('--duration', `${duration}ms`);
+                cellEl.style.setProperty('--delay', `${delay}ms`);
+                cellEl.classList.add('cell-flying');
+            }
+        }
+    }
+
     renderLives(burning = false) {
         this.livesElement.innerHTML = '';
         for (let i = 0; i < this.maxLives; i++) {
