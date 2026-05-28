@@ -306,6 +306,7 @@ class Minesweeper {
     }
 
     tryChord(row, col) {
+        if (this.gameOver || this.gameWon || this.explosionInProgress) return;
         const key = `${row},${col}`;
         if (this.chordHandled.has(key)) return;
 
